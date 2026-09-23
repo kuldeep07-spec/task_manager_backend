@@ -1,3 +1,5 @@
+# Quick check that Python can actually reach the MySQL database
+# using the engine defined in database.py.
 from database import engine
 
 try:
