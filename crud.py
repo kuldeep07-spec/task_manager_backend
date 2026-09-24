@@ -9,3 +9,10 @@ def create_user(db: Session, name: str, email: str):
     db.commit()            # actually save it to MySQL (same idea as SQL's COMMIT)
     db.refresh(new_user)   # reload from DB so new_user.id gets the real auto-generated value
     return new_user
+
+
+def get_all(db:Session):
+    return db.query(User).all()
+
+def get_user_by_id(db:Session,user_id:int):
+    return db.query(User).filter(User.id==user_id).first()
