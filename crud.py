@@ -50,3 +50,58 @@ def get_user_by_id(db: Session, user_id: int):
     # db.query(User)               -> "I want rows from the users table"
     # .filter(User.id == user_id)  -> "...but only where id matches" (note: == not =)
     # .first()                     -> "give me just the first match (or None if none found)"
+
+
+# ─────────────────────────────────────────────
+# UPDATE
+# ─────────────────────────────────────────────
+# Changes an existing user's email.
+# Equivalent SQL: UPDATE users SET email = <new_email> WHERE id = <user_id>;
+def update_user_email(db: Session, user_id: int, new_email: str):
+    user = db.query(User).filter(User.id == user_id).first()
+    # ↑ Step 1: fetch the row first — SQLAlchemy needs the actual object
+    #   in hand before it can track and apply a change to it.
+
+    if user:
+        # ↑ Guard against user_id not matching any row (user would be None).
+        #   Without this check, user.email = ... on None would crash.
+
+        user.email = new_email
+        # ↑ Step 2: just change the attribute directly, like any normal
+        #   Python variable. SQLAlchemy quietly tracks that this changed.
+
+        db.commit()
+        # ↑ Step 3: save the change to MySQL. Only the changed column
+        #   (email) gets sent in the actual UPDATE statement — name/id
+        #   are untouched.
+
+        db.refresh(user)
+        # ↑ Reload from DB to make sure our Python object matches
+        #   exactly what's now stored (good habit, mirrors create_user).
+
+    return user   # returns the updated user, or None if no match was found
+
+
+# ─────────────────────────────────────────────
+# DELETE
+# ─────────────────────────────────────────────
+# Removes a user row entirely.
+# Equivalent SQL: DELETE FROM users WHERE id = <user_id>;
+# NOTE: because task.user_id has ON DELETE CASCADE in MySQL, deleting a
+# user here will also automatically delete all of their tasks.
+def delete_user(db: Session, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    # ↑ Step 1: fetch the row first, same reasoning as update — need the
+    #   actual object in hand to tell SQLAlchemy what to delete.
+
+    if user:
+        # ↑ Guard against user_id not matching any row.
+
+        db.delete(user)
+        # ↑ Step 2: mark this row for deletion (staged, not yet permanent).
+
+        db.commit()
+        # ↑ Step 3: actually remove it from MySQL. This is the point of
+        #   no return — same COMMIT concept as everywhere else.
+
+    return user   # returns the (now-deleted) user object, or None if no match
