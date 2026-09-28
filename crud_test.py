@@ -10,7 +10,7 @@
 # with "None has no attribute name" once that happens.
 
 from database import SessionLocal
-from crud import create_user, get_all, get_user_by_id, update_user_email, delete_user
+from crud import create_user, get_all, get_user_by_id, update_user_email, delete_user,get_task_by_id
 
 db = SessionLocal()  # open a real session/connection
 
@@ -36,6 +36,8 @@ for user in all_users:
 search_by_user = get_user_by_id(db, 5)
 print("userdetail", search_by_user.name, search_by_user.email)
 
+search_by_task=get_task_by_id(db,1)
+print("taskdetails",search_by_task.id,search_by_task.title,search_by_task.is_done,search_by_task.user_id)
 
 # --- Test 4: Update that user's email ---
 # Equivalent SQL: UPDATE users SET email = 'helloworld@gmail.com' WHERE id = 5;
@@ -47,7 +49,7 @@ print("updated_email:", update_in_user.email)
 # Equivalent SQL: DELETE FROM users WHERE id = 5;
 # NOTE: this also cascades — deletes all of user 5's tasks too,
 # thanks to ON DELETE CASCADE on the task table's foreign key.
-del_user = delete_user(db, 5)
+del_user = delete_user(db, 2)
 print("deleted_user:", del_user.id, del_user.name, del_user.email)
 
 

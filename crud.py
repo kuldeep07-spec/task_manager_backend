@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session   # type hint for the db session parameter
-from models import User               # the User model, defined in models.py
+from models import User,Task              # the User model, defined in models.py
 
 
 # ─────────────────────────────────────────────
@@ -50,6 +50,9 @@ def get_user_by_id(db: Session, user_id: int):
     # db.query(User)               -> "I want rows from the users table"
     # .filter(User.id == user_id)  -> "...but only where id matches" (note: == not =)
     # .first()                     -> "give me just the first match (or None if none found)"
+
+def get_task_by_id(db:Session,user_id:int):
+    return db.query(Task).filter(Task.id == user_id).first()
 
 
 # ─────────────────────────────────────────────
