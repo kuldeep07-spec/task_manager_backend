@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from crud import get_all, get_user_by_id, create_user, update_user_email, delete_user
+from crud import get_all, get_user_by_id, create_user, update_user_email, delete_user, get_tasks
 from pydantic import BaseModel
 
 
@@ -45,6 +45,15 @@ class UserUpdate(BaseModel):
 
 
 # ─────────────────────────────────────────────
+# Path parameters vs query parameters
+# ─────────────────────────────────────────────
+# FastAPI decides by one rule, based on the route string:
+#   - name appears in {} in the route  -> PATH parameter   (/users/5)
+#   - name does NOT appear in the route -> QUERY parameter (/users?skip=10&limit=5)
+# A "= value" after a parameter is its default, used when the caller sends nothing.
+
+
+# ─────────────────────────────────────────────
 # GET routes — read data, never change anything
 # ─────────────────────────────────────────────
 
@@ -53,11 +62,28 @@ def home():
     return {"message": "Task Manager API is running"}
 
 
+# Pagination: returns one page of users instead of the whole table.
+# skip  = rows to skip first (OFFSET).  Formula: skip = (page - 1) * page_size
+# limit = rows to return (LIMIT, the page size)
+# Example: /users?skip=10&limit=5 -> page 3 with 5 users per page.
+# Plain /users uses the defaults (skip=0, limit=10) -> first 10 users.
 @app.get("/users")
-def list_users(db: Session = Depends(get_db)):
+def list_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     # Depends(get_db) -> FastAPI calls get_db() for us, hands us the
     # session as `db`, and closes it automatically when the request ends.
-    return get_all(db)
+    return get_all(db, skip=skip, limit=limit)
+
+
+# Filtering + pagination together.
+# is_done is OPTIONAL (defaults to None):
+#   /tasks                  -> all tasks
+#   /tasks?is_done=true     -> only done tasks
+#   /tasks?is_done=false    -> only unfinished tasks
+# The filter runs first, then skip/limit take a page from the filtered rows:
+#   /tasks?is_done=false&skip=0&limit=5 -> first 5 unfinished tasks
+@app.get("/tasks")
+def list_tasks(is_done: bool | None = None, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    return get_tasks(db, is_done=is_done, skip=skip, limit=limit)
 
 
 @app.get("/users/{user_id}")

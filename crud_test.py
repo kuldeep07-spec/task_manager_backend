@@ -1,56 +1,55 @@
 # crud_test.py
 # Manual test script for the functions in crud.py.
-# Runs through all 5 CRUD operations in sequence, using real data
-# from the MySQL database, to confirm each function works correctly.
+# Runs create, read (users and tasks), update and delete against the real
+# MySQL database, to confirm each function works.
 #
-# ⚠️ CAUTION: this file both creates AND deletes real data every run.
-# Re-running it repeatedly will keep adding "Test Python User0N" rows
-# (change the email each time) and will keep deleting user id 5 —
-# after the first run, id 5 no longer exists, so Tests 3-5 will fail
-# with "None has no attribute name" once that happens.
+# ⚠️ CAUTION: this file changes real data every run (creates and deletes users).
+# It is NOT safe to re-run as-is. See the warning above each test.
 
 from database import SessionLocal
-from crud import create_user, get_all, get_user_by_id, update_user_email, delete_user,get_task_by_id
+from crud import (
+    create_user, get_all, get_user_by_id, update_user_email,
+    delete_user, get_task_by_id, get_tasks,
+)
 
 db = SessionLocal()  # open a real session/connection
 
 
 # --- Test 1: Create a new user ---
 # Equivalent SQL: INSERT INTO users (name, email) VALUES (...);
-# NOTE: change the email before each re-run, or this fails with
-# IntegrityError (1062, Duplicate entry) since email is UNIQUE.
+# ⚠️ Email is UNIQUE, so the 2nd run fails with IntegrityError (1062).
+#    Change the email before each re-run, or comment this test out.
 new_user = create_user(db, name="Test Python User01", email="testpython01@example.com")
 print("Created user with id:", new_user.id)
 
 
-# --- Test 2: Get all users ---
-# Equivalent SQL: SELECT * FROM users;
+# --- Test 2: Get one page of users ---
+# Equivalent SQL: SELECT * FROM users ORDER BY id LIMIT 10 OFFSET 0;
+# get_all now paginates, so this returns at most 10 users (the default
+# limit), not the whole table. To get another page: get_all(db, skip=10, limit=5)
 all_users = get_all(db)
-print("all users", len(all_users))
+print("users on this page:", len(all_users))
 for user in all_users:
     print(user.id, user.name, user.email)
 
 
-# --- Test 3: Get one user by id ---
+# --- Test 3: Get tasks, filtered by is_done ---
+# Equivalent SQL: SELECT * FROM tasks WHERE is_done = TRUE ORDER BY id LIMIT 10;
+# True = only done tasks. Pass False for unfinished, or leave it out for all.
+# Also limited to 10 rows by default, so the count is at most 10.
+all_tasks = get_tasks(db, True)
+print("tasks on this page:", len(all_tasks))
+for task in all_tasks:
+    print(task.id, task.title, task.is_done, task.user_id)
+
+
+# --- Test 4: Get one user by id ---
 # Equivalent SQL: SELECT * FROM users WHERE id = 5;
+# ⚠️ User 5 was deleted earlier, so this returns None and the next line
+#    crashes with "'NoneType' object has no attribute 'name'".
+#    Use an id that still exists, like 1.
 search_by_user = get_user_by_id(db, 5)
 print("userdetail", search_by_user.name, search_by_user.email)
 
-search_by_task=get_task_by_id(db,1)
-print("taskdetails",search_by_task.id,search_by_task.title,search_by_task.is_done,search_by_task.user_id)
 
-# --- Test 4: Update that user's email ---
-# Equivalent SQL: UPDATE users SET email = 'helloworld@gmail.com' WHERE id = 5;
-update_in_user = update_user_email(db, 5, "helloworld@gmail.com")
-print("updated_email:", update_in_user.email)
-
-
-# --- Test 5: Delete that same user ---
-# Equivalent SQL: DELETE FROM users WHERE id = 5;
-# NOTE: this also cascades — deletes all of user 5's tasks too,
-# thanks to ON DELETE CASCADE on the task table's foreign key.
-del_user = delete_user(db, 2)
-print("deleted_user:", del_user.id, del_user.name, del_user.email)
-
-
-db.close()  # always close the session when done
+# --- Test 5: Get one task by the
