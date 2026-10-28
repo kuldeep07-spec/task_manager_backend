@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 # Column      -> declares one column in a table
 # Integer, String, Boolean -> the column's data type (INT, VARCHAR, BOOLEAN in MySQL)
 # ForeignKey  -> links a column to another table's column
+from sqlalchemy.dialects.postgresql import JSONB
 
 from sqlalchemy.orm import relationship
 # relationship -> lets objects reach related rows (user.tasks, task.owner)
@@ -52,7 +53,8 @@ class Task(Base):
     # not the class name ("User"). ForeignKey speaks MySQL, relationship speaks Python.
     # ondelete="CASCADE" matches our MySQL FK: if a user is deleted,
     # MySQL deletes all their tasks too.
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"),index=True)
+    
 
     # Relationship (Python-only, adds no column, changes nothing in MySQL).
     # Gives every task an "owner" shelf: task.owner -> the single User who owns it.
