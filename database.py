@@ -41,7 +41,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 #   create_engine below fails with an error. Check .env first when it breaks.
 #   GOTCHA: .env must be in .gitignore, or the password goes to GitHub.
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL,echo=True)
 # ↑ The engine = the connection to PostgreSQL (SQL world: "the connection").
 #   It manages a pool of connections, so each request does not open a new one.
 #   It is lazy: it connects only when the first query runs, not on this line.
